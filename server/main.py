@@ -1,6 +1,6 @@
 import os
 import uvicorn
-from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
+from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile, APIRouter, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 
@@ -14,8 +14,10 @@ from models.api import (
 )
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
-
+from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
+from deployer.SurfaceDeploy import SurfaceDeploy
+from fastapi.responses import FileResponse
 
 bearer_scheme = HTTPBearer()
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
@@ -117,6 +119,7 @@ async def query_main(
 async def query(
     request: QueryRequest = Body(...),
 ):
+    
     try:
         results = await datastore.query(
             request.queries,
@@ -155,6 +158,85 @@ async def delete(
 async def startup():
     global datastore
     datastore = await get_datastore()
+
+
+#======================================================Subdomain======================================================
+@app.post("/create-plugin")
+def create_plugin(
+    # openai_api_key: Annotated[str, Form(..., max_length=210)],
+    user_id: Annotated[str, Form(..., max_length=210)],
+    name_for_human: Annotated[str, Form(..., max_length=50)],
+    # name_for_model: Annotated[str, Form(..., max_length=50)],
+    # description_for_human: Annotated[str, Form(..., max_length=120)],
+    # description_for_model: Annotated[str, Form(..., max_length=8000)],
+    # contact_email: Annotated[str, Form(..., max_length=120)],
+    # legal_info_url: Annotated[str, Form(..., max_length=1000)],
+    # openapi_title: Annotated[str, Form(..., max_length=50)],
+    # openapi_description: Annotated[str, Form(..., max_length=500)], 
+    logo: UploadFile = File(..., max_size=2*1024*1024)
+):
+    item = {
+        "user_id": user_id,
+        # "openai_api_key": openai_api_key,
+        "name_for_human": name_for_human,
+        # "name_for_model": name_for_model,
+        # "description_for_human": description_for_human,
+        # "description_for_model": description_for_model,
+        # "contact_email": contact_email,
+        # "legal_info_url": legal_info_url,
+        # "openapi_title": openapi_title,
+        # "openapi_description": openapi_description,
+    }
+
+    deployer = SurfaceDeploy(user_id, name_for_human)
+    deployer.set_configs(item)
+    deployer.upload_logo(logo)
+
+    return {
+        "subdomain": deployer.subdomain
+    }
+
+
+
+# Create a router for the subdomain
+router = APIRouter()
+
+# Define a function to create a new instance of StaticFiles for each subdomain
+def get_subdomain_static_files(subdomain: str) -> StaticFiles:
+    subdomain_static_dir = "./deps/" + subdomain
+    return StaticFiles(directory=str(subdomain_static_dir))
+
+@router.get("/")
+async def read_root(subdomain: str):
+    return {"message": f"Hello from {subdomain}.zeki.com!"}
+# Add a new route for each subdomain that mounts the corresponding StaticFiles instance
+@router.get("/{subdomain}/ai-plugin.json")
+async def ai_plugin(subdomain: str):
+    return get_subdomain_static_files(subdomain).get_response("ai-plugin.json")
+# Add a new route for each subdomain that mounts the corresponding StaticFiles instance
+@router.get("/{subdomain}/openapi.yaml")
+async def openapi_yaml(subdomain: str):
+    return get_subdomain_static_files(subdomain).get_response("openapi.yaml")
+# Add a new route for each subdomain that mounts the corresponding StaticFiles instance
+@router.get("/{subdomain}/logo.png")
+async def read_logo(subdomain: str):
+    return get_subdomain_static_files(subdomain).get_response("logo.png")
+
+
+@router.post("/query")
+async def query(request: QueryRequest = Body(...)):
+    try:
+        results = await datastore.query(
+            request.queries,
+        )
+        return QueryResponse(results=results)
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail="Internal Service Error")
+
+# Mount the subdomain router on the main application
+app.include_router(router, tags=["subdomains"])
+#======================================================Subdomain======================================================
 
 
 def start():

@@ -44,12 +44,12 @@ class PineconeDataStore(DataStore):
                 print(
                     f"Creating index {PINECONE_INDEX} with metadata config {fields_to_index}"
                 )
-                pinecone.create_index(
-                    PINECONE_INDEX,
-                    dimension=1536,  # dimensionality of OpenAI ada v2 embeddings
-                    metadata_config={"indexed": fields_to_index},
-                )
-                self.index = pinecone.Index(PINECONE_INDEX)
+                # pinecone.create_index(
+                #     PINECONE_INDEX,
+                #     dimension=1536,  # dimensionality of OpenAI ada v2 embeddings
+                #     metadata_config={"indexed": fields_to_index},
+                # )
+                # self.index = pinecone.Index(PINECONE_INDEX)
                 print(f"Index {PINECONE_INDEX} created successfully")
             except Exception as e:
                 print(f"Error creating index {PINECONE_INDEX}: {e}")
