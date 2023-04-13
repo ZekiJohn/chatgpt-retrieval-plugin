@@ -3,16 +3,16 @@ from io import BufferedReader
 from typing import Optional
 from fastapi import UploadFile
 import mimetypes
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfReader, PdfReader
 import docx2txt
 import csv
 import pptx
-
 from models.models import Document, DocumentMetadata, Source
+from io import BytesIO
 
 
-async def get_document_from_file(file: UploadFile) -> Document:
-    extracted_text = await extract_text_from_form_file(file)
+async def get_document_from_file(file: bytes, mimetype: str) -> Document:
+    extracted_text = await extract_text_from_form_file(file, mimetype)
     metadata = DocumentMetadata(
         source=Source.file,
     )
@@ -43,6 +43,7 @@ def extract_text_from_filepath(filepath: str, mimetype: Optional[str] = None) ->
 
 def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
     if mimetype == "application/pdf":
+        print(file)
         # Extract text from pdf using PyPDF2
         reader = PdfReader(file)
         extracted_text = " ".join([page.extract_text() for page in reader.pages])
@@ -86,15 +87,18 @@ def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
 
 
 # Extract text from a file based on its mimetype
-async def extract_text_from_form_file(file: UploadFile):
+async def extract_text_from_form_file(file: bytes, mimetype: str):
     """Return the text content of a file."""
     # get the file body from the upload file object
-    mimetype = file.content_type
-    print(f"mimetype: {mimetype}")
-    print(f"file.file: {file.file}")
-    print("file: ", file)
 
-    file_stream = await file.read()
+    # mimetype = file.content_type
+
+    # print(f"mimetype: {mimetype}")
+    # print(f"file.file: {file.file}")
+    # print("file: ", file)
+
+    file_stream = file
+    # file_stream = await file.read()
 
     temp_file_path = "/tmp/temp_file"
 
@@ -113,3 +117,54 @@ async def extract_text_from_form_file(file: UploadFile):
     os.remove(temp_file_path)
 
     return extracted_text
+
+
+
+async def count_characters_in_pdf(file_stream: bytes, mimetype: str) -> int:
+    # if mimetype == "application/pdf":
+    # elif mimetype == "text/plain" or mimetype == "text/markdown":
+    # elif (
+    #         mimetype
+    #         == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    #     ):
+    # elif mimetype == "text/csv":
+    # elif (
+    #         mimetype
+    #         == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    #     ):
+    # else:
+    #     # Unsupported file type
+
+    if not file_stream:
+        raise ValueError("The provided file is empty")
+    # Create a PDF file reader
+    with BytesIO(file_stream) as pdf_file:
+        pdf_reader = PdfReader(pdf_file)
+        num_pages = len(pdf_reader.pages)
+        
+        total_chars = 0
+
+        # Iterate through all the pages and count the characters
+        for i in range(num_pages):
+            page = pdf_reader.pages[i]
+            text = page.extract_text()
+            total_chars += len(text)
+    
+    return total_chars
+
+
+# def count_characters(file_path):
+#     with open(file_path, 'rb') as f:
+#         pdf_reader = PdfReader(f)
+#         num_pages = pdf_reader.getNumPages()
+#         char_count = 0
+#         for page_num in range(num_pages):
+#             page_obj = pdf_reader.pages[page_num]
+#             page_text = page_obj.extract_text()
+#             char_count += len(page_text)
+#     return char_count
+
+# def count_characters_in_pdf(pdf_content: bytes) -> int:
+#     with BytesIO(pdf_content) as pdf_file:
+#         text = extract_text(pdf_file)
+#     return len(text)

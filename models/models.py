@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 from enum import Enum
 
 
@@ -43,7 +43,7 @@ class DocumentWithChunks(Document):
 
 
 class DocumentMetadataFilter(BaseModel):
-    document_id: Optional[str] = None
+    document_id: Optional[Union[str, Dict[str, List[str]]]] = None
     source: Optional[Source] = None
     source_id: Optional[str] = None
     author: Optional[str] = None

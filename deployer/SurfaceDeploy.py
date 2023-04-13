@@ -4,6 +4,8 @@ import shutil
 import random
 import string 
 import re
+import jwt
+
 
 class SurfaceDeploy:
     def __init__(self, user_id, plugin_name):
@@ -11,8 +13,20 @@ class SurfaceDeploy:
         self.subdomain = str(user_id) + "-" + self.slugify(plugin_name) + "-" + self.random_string() + "-" + self.random_string()
         self.subdomain_dir = "./deps/" + self.subdomain
         self.app_url = self.subdomain + ""
-        # copy sample directory 
+        self.plugin_id = self.random_string()
+        # copy sample directory
         shutil.copytree("./sample_surface_deployment_dir", self.subdomain_dir)
+
+
+    def generate_token(self, user_id, user_plan):
+        secret = "3efdd8b59a11a31d912c6c4c1657607dfc994b1c92eaf9a021551774eb24bc00"
+        return jwt.encode({
+            "user": user_id, 
+            "plan": user_plan, 
+            "plugin": self.plugin_id,
+            "subdomain": self.subdomain,
+        }, secret, algorithm="HS256")
+
 
     def upload_logo(self, logo):
         file_extension = logo.filename.split(".")[-1]
@@ -29,22 +43,21 @@ class SurfaceDeploy:
 
     def set_configs(self, item):
         replace_mapping_ai_plugin = {
-            # "[name_for_model]": item["name_for_model"],
+            "[name_for_model]": item["name_for_model"],
             "[name_for_human]": item["name_for_human"],
             "[app_url]": self.app_url,
-            # "[description_for_model]": item["description_for_model"],
-            # "[description_for_human]": item["description_for_human"],
-            # "[app_url]": self.vdb_index_name,
-            # "[contact_email]": item["contact_email"],
-            # "[legal_info_url]": item["legal_info_url"],
+            "[description_for_model]": item["description_for_model"],
+            "[description_for_human]": item["description_for_human"],
+            "[app_url]": self.app_url,
+            "[contact_email]": item["contact_email"],
+            "[legal_info_url]": item["legal_info_url"],
         }
 
         self.replace_in_file(self.subdomain_dir + "/.well-known/" + "ai-plugin.json", replace_mapping_ai_plugin)
-        print("===========================")
         replace_mapping_openapi = {
             "[app_url]": self.app_url,
-            "[openapi_title]": item["name_for_human"],
-            "[openapi_description]": item["name_for_human"],
+            "[openapi_title]": item["openapi_title"],
+            "[openapi_description]": item["openapi_description"],
         }
         self.replace_in_file(self.subdomain_dir + "/.well-known/" + "openapi.yaml", replace_mapping_openapi)
 

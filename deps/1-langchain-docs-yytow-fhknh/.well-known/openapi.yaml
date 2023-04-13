@@ -1,10 +1,10 @@
 openapi: 3.0.2
 info:
-  title: todo list
-  description: todo list
+  title: Retrieval Plugin API
+  description: This API lets you search through the LangChain Documentation.
   version: 1.0.0
   servers:
-    - url: 1-todo-list-ajdxd-ubwsh-aaavv
+    - url: 1-langchain-docs-yytow-fhknh
 paths:
   /query:
     post:
