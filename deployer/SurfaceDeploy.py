@@ -8,15 +8,18 @@ import jwt
 
 
 class SurfaceDeploy:
-    def __init__(self, user_id, plugin_name):
-        # datetime.now().strftime("%m-%d-%y") + "--" + 
+    def __init__(self, user_id, plugin_name, user_plan):
+        # self.app_url = "https://personalized-retrieval-plugin.up.mygptplugin.com" # I can use this domain unless it is I submit and approved by OpenAI, why? bze using the same domain for unverified plugin will only allow upto 15 users
+        
         self.subdomain = str(user_id) + "-" + self.slugify(plugin_name) + "-" + self.random_string() + "-" + self.random_string()
         self.subdomain_dir = "./deps/" + self.subdomain
-        self.app_url = self.subdomain + ""
-        self.plugin_id = self.random_string()
-        # copy sample directory
-        shutil.copytree("./sample_surface_deployment_dir", self.subdomain_dir)
+        self.app_url = "https://" + self.subdomain + ".up.mygptplugin.com"
+        
+        if user_plan != "free" and user_plan != "hobby":
+            # copy sample directory
+            shutil.copytree("./sample_surface_deployment_dir", self.subdomain_dir)
 
+        self.plugin_id = self.random_string()
 
     def generate_token(self, user_id, user_plan):
         secret = "3efdd8b59a11a31d912c6c4c1657607dfc994b1c92eaf9a021551774eb24bc00"

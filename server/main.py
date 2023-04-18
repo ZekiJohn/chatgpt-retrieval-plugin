@@ -18,7 +18,7 @@ from models.models import (
     Query,
 )
 from datastore.factory import get_datastore
-from services.file import get_document_from_file, count_characters_in_pdf
+from services.file import get_document_from_file, count_characters_in_file
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 from deployer.SurfaceDeploy import SurfaceDeploy
@@ -127,14 +127,14 @@ async def upsert_file(
 
     if prev_chat_count == None:
         r.set(f"{user_id}:{plugin_id}:chars_count", 0)
-    if user_plan == "free" and prev_chat_count > 500000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 450000.")
-    elif user_plan == "hobby" and prev_chat_count > 2100000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 2100000.")
-    elif user_plan == "standard" and prev_chat_count > 4500000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 4500000.")
-    elif user_plan == "unlimited" and prev_chat_count > 4500000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 4500000.")
+    if user_plan == "free" and prev_chat_count > 400000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 400000.")
+    elif user_plan == "hobby" and prev_chat_count > 7000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 7000000.")
+    elif user_plan == "standard" and prev_chat_count > 10000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 10000000.")
+    elif user_plan == "unlimited" and prev_chat_count > 20000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 20000000.")
    
 
     # Read the uploaded file
@@ -146,7 +146,7 @@ async def upsert_file(
     file_stream = await file.read()
     mimetype = file.content_type
 
-    doc_chars = await count_characters_in_pdf(file_stream, mimetype)
+    doc_chars = await count_characters_in_file(file_stream, mimetype)
     doc_chars = doc_chars or 0
 
     time_taken = time.time() - start_time
@@ -160,14 +160,14 @@ async def upsert_file(
 
     await r.incrby(f"{user_id}:{plugin_id}:chars_count", int(doc_chars))
 
-    if user_plan == "free" and total_chars > 500000:
+    if user_plan == "free" and total_chars > 400000:
         raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 450000.")
-    elif user_plan == "hobby" and total_chars > 2100000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 2100000.")
-    elif user_plan == "standard" and total_chars > 4500000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 4500000.")
-    elif user_plan == "unlimited" and total_chars > 4500000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 4500000.")
+    elif user_plan == "hobby" and total_chars > 7000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 7000000.")
+    elif user_plan == "standard" and total_chars > 10000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 10000000.")
+    elif user_plan == "unlimited" and total_chars > 20000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 20000000.")
 
 
     print(file)
@@ -186,19 +186,19 @@ async def upsert_file(
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
-@app.post(
-    "/upsert",
-    response_model=UpsertResponse,
-)
-async def upsert(
-    request: UpsertRequest = Body(...),
-):
-    try:
-        ids = await datastore.upsert(request.documents)
-        return UpsertResponse(ids=ids)
-    except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+# @app.post(
+#     "/upsert",
+#     response_model=UpsertResponse,
+# )
+# async def upsert(
+#     request: UpsertRequest = Body(...),
+# ):
+#     try:
+#         ids = await datastore.upsert(request.documents)
+#         return UpsertResponse(ids=ids)
+#     except Exception as e:
+#         print("Error:", e)
+#         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
 @app.post(
@@ -222,7 +222,7 @@ async def query_main(
 
     doc_ids = list(await r.smembers(f"{user_id}:{plugin_id}:ids"))
 
-    print("===================> Request Quries:-", ,request.queries)
+    print("===================> Request Quries:-",request.queries)
 
     for query in request.queries:
         if query.filter == None:
@@ -305,7 +305,7 @@ async def delete(
 
 
 #======================================================Subdomain======================================================
-@app.post("/plugins/create")
+@app.post("/plugins/create", include_in_schema=False)
 async def create_plugin(
     user_id: str = Form(...),
     user_plan: str = Form(...),
@@ -318,7 +318,7 @@ async def create_plugin(
     legal_info_url: str = Form(...),
     openapi_title: str = Form(...),
     openapi_description: str = Form(...), 
-    logo: UploadFile = File(...),
+    logo: UploadFile = File(None),
 ):
     item = {
         "user_id": user_id,
@@ -334,27 +334,29 @@ async def create_plugin(
         "openapi_description": openapi_description,
     }
 
-    deployer = SurfaceDeploy(user_id, name_for_human)
+    deployer = SurfaceDeploy(user_id, name_for_human, user_plan)
 
     tkn = deployer.generate_token(item["user_id"], item["user_plan"])
     # r = get_redis_connection()
     # r.sadd(TOKENS_KEY, tkn)
 
-    deployer.set_configs(item)
-    deployer.upload_logo(logo)
-    print({
+    if user_plan != "free" and user_plan != "hobby":
+        deployer.set_configs(item)
+        deployer.upload_logo(logo)
+
+    print("Created New App for ", f"- {user_id}", f"- {user_plan}", {
         "app_url": deployer.subdomain,
         "bearer_token": tkn,
         "plugin_id": deployer.plugin_id,
     })
     return {
-        "app_url": deployer.subdomain,
+        "app_url": deployer.app_url,
         "bearer_token": tkn,
         "plugin_id": deployer.plugin_id,
     }
 
 
-@app.get("/.well-known/ai-plugin.json")
+@app.get("/.well-known/ai-plugin.json", include_in_schema=False)
 async def ai_plugin_json(request: Request):
     subdomain = request.headers["Host"].split(".")[0]
     file_path = f"./deps/{subdomain}/.well-known/ai-plugin.json"
@@ -364,7 +366,7 @@ async def ai_plugin_json(request: Request):
         raise HTTPException(status_code=404, detail="File not found")
 
 
-@app.get("/.well-known/openapi.yaml")
+@app.get("/.well-known/openapi.yaml", include_in_schema=False)
 async def openapi_yaml(request: Request):
     subdomain = request.headers["Host"].split(".")[0]
     file_path = f"./deps/{subdomain}/.well-known/openapi.yaml"
@@ -374,7 +376,7 @@ async def openapi_yaml(request: Request):
         raise HTTPException(status_code=404, detail="File not found")
 
 
-@app.get("/.well-known/logo.png")
+@app.get("/.well-known/logo.png", include_in_schema=False)
 async def logo_png(request: Request):
     subdomain = request.headers["Host"].split(".")[0]
     file_path = f"./deps/{subdomain}/.well-known/logo.png"

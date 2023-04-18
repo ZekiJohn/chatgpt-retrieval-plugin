@@ -9,7 +9,8 @@ import csv
 import pptx
 from models.models import Document, DocumentMetadata, Source
 from io import BytesIO
-
+from docx import Document as DocxDocument
+from pptx import Presentation
 
 async def get_document_from_file(file: bytes, mimetype: str) -> Document:
     extracted_text = await extract_text_from_form_file(file, mimetype)
@@ -120,37 +121,51 @@ async def extract_text_from_form_file(file: bytes, mimetype: str):
 
 
 
-async def count_characters_in_pdf(file_stream: bytes, mimetype: str) -> int:
-    # if mimetype == "application/pdf":
-    # elif mimetype == "text/plain" or mimetype == "text/markdown":
-    # elif (
-    #         mimetype
-    #         == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    #     ):
-    # elif mimetype == "text/csv":
-    # elif (
-    #         mimetype
-    #         == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-    #     ):
-    # else:
-    #     # Unsupported file type
+async def count_characters_in_file(file_stream: bytes, mimetype: str) -> int:
+    if mimetype == "application/pdf":
+        if not file_stream:
+            raise ValueError("The provided file is empty")
+        # Create a PDF file reader
+        with BytesIO(file_stream) as pdf_file:
+            pdf_reader = PdfReader(pdf_file)
+            num_pages = len(pdf_reader.pages)
+            
+            total_chars = 0
 
-    if not file_stream:
-        raise ValueError("The provided file is empty")
-    # Create a PDF file reader
-    with BytesIO(file_stream) as pdf_file:
-        pdf_reader = PdfReader(pdf_file)
-        num_pages = len(pdf_reader.pages)
+            # Iterate through all the pages and count the characters
+            for i in range(num_pages):
+                page = pdf_reader.pages[i]
+                text = page.extract_text()
+                total_chars += len(text)
         
-        total_chars = 0
-
-        # Iterate through all the pages and count the characters
-        for i in range(num_pages):
-            page = pdf_reader.pages[i]
-            text = page.extract_text()
-            total_chars += len(text)
-    
-    return total_chars
+        return total_chars
+    elif mimetype == "text/plain" or mimetype == "text/markdown" or mimetype == "text/csv":
+        text = file_stream.decode("utf-8")
+        return len(text)
+    elif (
+            mimetype
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ):
+        document = DocxDocument(BytesIO(file_stream))
+        char_count = 0
+        for paragraph in document.paragraphs:
+            char_count += len(paragraph.text)
+        return char_count
+    elif (
+            mimetype
+            == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ):
+        presentation = Presentation(BytesIO(file_stream))
+        char_count = 0
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                if not shape.has_text_frame:
+                    continue
+                for paragraph in shape.text_frame.paragraphs:
+                    char_count += len(paragraph.text)
+        return char_count
+    else:
+        return 1000000000
 
 
 # def count_characters(file_path):
