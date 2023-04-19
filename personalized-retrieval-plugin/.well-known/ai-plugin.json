@@ -10,10 +10,10 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://personalized-retrieval-plugin.up.mygptplugin.com/.well-known/openapi.yaml",
+    "url": "https://personalize.mygptplugin.com/.well-known/openapi.yaml",
     "has_user_authentication": false
   },
-  "logo_url": "https://personalized-retrieval-plugin.up.mygptplugin.com/.well-known/logo.png",
+  "logo_url": "https://personalize.mygptplugin.com/.well-known/logo.png",
   "contact_email": "contact@mygptplugin.com", 
   "legal_info_url": "contact@mygptplugin.com"
 }

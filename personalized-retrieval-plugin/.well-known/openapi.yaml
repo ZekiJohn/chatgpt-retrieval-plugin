@@ -4,7 +4,7 @@ info:
   description: A retrieval API for querying and filtering documents based on natural language queries and metadata
   version: 1.0.0
 servers:
-  - url: https://personalized-retrieval-plugin.up.mygptplugin.com
+  - url: https://personalize.mygptplugin.com
 paths:
   /upsert:
     post:

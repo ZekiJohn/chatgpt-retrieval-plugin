@@ -17,6 +17,7 @@ class SurfaceDeploy:
         
         if user_plan != "free" and user_plan != "hobby":
             # copy sample directory
+            self.app_url = "https://personalize.mygptplugin.com"
             shutil.copytree("./sample_surface_deployment_dir", self.subdomain_dir)
 
         self.plugin_id = self.random_string()
