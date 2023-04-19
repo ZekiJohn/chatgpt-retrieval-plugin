@@ -39,8 +39,8 @@ assert BEARER_TOKEN is not None
 TOKENS_KEY="utokens"
 
 # Define rate limiters for each subscription plan
-free_limiter = RateLimiter(times=5, seconds=86400)
-hobby_limiter = RateLimiter(times=5, seconds=86400)
+free_limiter = RateLimiter(times=100, seconds=86400)
+hobby_limiter = RateLimiter(times=1000, seconds=86400)
 standard_limiter = RateLimiter(times=5000, seconds=86400)
 unlimited_limiter = RateLimiter(times=1000000, seconds=86400)
 
