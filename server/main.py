@@ -363,7 +363,8 @@ async def ai_plugin_json(request: Request):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     else:
-        raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse("./personalized-retrieval-plugin/.well-known/ai-plugin.json")
+        # raise HTTPException(status_code=404, detail="File not found")
 
 
 @app.get("/.well-known/openapi.yaml", include_in_schema=False)
@@ -373,7 +374,8 @@ async def openapi_yaml(request: Request):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     else:
-        raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse("./personalized-retrieval-plugin/.well-known/openapi.yaml")
+        # raise HTTPException(status_code=404, detail="File not found")
 
 
 @app.get("/.well-known/logo.png", include_in_schema=False)
@@ -383,7 +385,8 @@ async def logo_png(request: Request):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     else:
-        raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse("./personalized-retrieval-plugin/.well-known/logo.png")
+        # raise HTTPException(status_code=404, detail="File not found")
 
 
 #======================================================Subdomain======================================================
@@ -405,7 +408,7 @@ async def startup():
     global datastore
     datastore = await get_datastore()
     global r
-    r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    r = redis.Redis(host='redis-stack-server', port=6379, db=0, decode_responses=True)
     await FastAPILimiter.init(r, prefix="ratelimiter", identifier=token_identifier)
 
 
