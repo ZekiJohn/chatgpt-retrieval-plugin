@@ -32,8 +32,8 @@ from fastapi_limiter.depends import RateLimiter
 
 
 bearer_scheme = HTTPBearer()
-BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
-assert BEARER_TOKEN is not None
+# BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
+# assert BEARER_TOKEN is not None
 
 # Keys for Redis
 TOKENS_KEY="utokens"
