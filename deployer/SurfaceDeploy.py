@@ -13,11 +13,11 @@ class SurfaceDeploy:
         
         self.subdomain = str(user_id) + "-" + self.slugify(plugin_name) + "-" + self.random_string() + "-" + self.random_string()
         self.subdomain_dir = "./deps/" + self.subdomain
-        self.app_url = "https://" + self.subdomain + ".up.mygptplugin.com"
+        self.app_url = "https://personalize.mygptplugin.com"
         
         if user_plan != "free" and user_plan != "hobby":
             # copy sample directory
-            self.app_url = "https://personalize.mygptplugin.com"
+            self.app_url = "https://" + self.subdomain + ".up.mygptplugin.com"
             shutil.copytree("./sample_surface_deployment_dir", self.subdomain_dir)
 
         self.plugin_id = self.random_string()
