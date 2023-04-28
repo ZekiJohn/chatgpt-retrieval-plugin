@@ -39,10 +39,10 @@ bearer_scheme = HTTPBearer()
 TOKENS_KEY="utokens"
 
 # Define rate limiters for each subscription plan
-free_limiter = RateLimiter(times=100, seconds=86400)
-hobby_limiter = RateLimiter(times=1000, seconds=86400)
-standard_limiter = RateLimiter(times=5000, seconds=86400)
-unlimited_limiter = RateLimiter(times=1000000, seconds=86400)
+free_limiter = RateLimiter(times=50, seconds=2538000)
+hobby_limiter = RateLimiter(times=2000, seconds=2538000)
+standard_limiter = RateLimiter(times=10000, seconds=2538000)
+unlimited_limiter = RateLimiter(times=30000, seconds=2538000)
 
 async def enforce_rate_limiting(request: Request, plan: str) -> None:
     if plan == "free":
@@ -127,14 +127,14 @@ async def upsert_file(
 
     if prev_chat_count == None:
         r.set(f"{user_id}:{plugin_id}:chars_count", 0)
-    if user_plan == "free" and prev_chat_count > 400000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 400000.")
-    elif user_plan == "hobby" and prev_chat_count > 7000000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 7000000.")
+    if user_plan == "free" and prev_chat_count > 200000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 200000.")
+    elif user_plan == "hobby" and prev_chat_count > 9000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 9000000.")
     elif user_plan == "standard" and prev_chat_count > 10000000:
         raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 10000000.")
-    elif user_plan == "unlimited" and prev_chat_count > 20000000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 20000000.")
+    elif user_plan == "unlimited" and prev_chat_count > 12000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 12000000.")
    
 
     # Read the uploaded file
@@ -160,17 +160,16 @@ async def upsert_file(
 
     await r.incrby(f"{user_id}:{plugin_id}:chars_count", int(doc_chars))
 
-    if user_plan == "free" and total_chars > 400000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 450000.")
-    elif user_plan == "hobby" and total_chars > 7000000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 7000000.")
+    if user_plan == "free" and total_chars > 200000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the free plan. The maximum allowed character limit is 200000.")
+    elif user_plan == "hobby" and total_chars > 9000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the hobby plan. The maximum allowed character limit is 9000000.")
     elif user_plan == "standard" and total_chars > 10000000:
         raise HTTPException(status_code=422, detail="You have exceeded the character limit for the standard plan. The maximum allowed character limit is 10000000.")
-    elif user_plan == "unlimited" and total_chars > 20000000:
-        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 20000000.")
+    elif user_plan == "unlimited" and total_chars > 12000000:
+        raise HTTPException(status_code=422, detail="You have exceeded the character limit for the  plan. The maximum allowed character limit is 12000000.")
 
 
-    print(file)
     await file.seek(0)
     document = await get_document_from_file(file_stream, mimetype)
 
